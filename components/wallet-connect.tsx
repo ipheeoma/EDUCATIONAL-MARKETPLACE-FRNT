@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Wallet, Copy, ExternalLink, LogOut, CheckCircle, AlertCircle, Coins } from "lucide-react"
+import { Wallet, Copy, ExternalLink, LogOut, CheckCircle, AlertCircle } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 
 interface WalletInfo {
@@ -18,90 +18,17 @@ interface WalletInfo {
   network: string
   balance: string
   provider: string
-  nfts: number
-  transactions: number
+  nfts?: number
+  transactions?: number
 }
-
-interface DemoWallet {
-  name: string
-  icon: string
-  address: string
-  network: string
-  balance: string
-  nfts: number
-  transactions: number
-  description: string
-}
-
-const DEMO_WALLETS: DemoWallet[] = [
-  {
-    name: "Student Wallet",
-    icon: "🎓",
-    address: "0x742d35Cc6634C0532925a3b8D4C9db96590c4C87",
-    network: "Polygon",
-    balance: "125.50 MATIC",
-    nfts: 3,
-    transactions: 47,
-    description: "A student's wallet with course certificates and learning tokens",
-  },
-  {
-    name: "Instructor Wallet",
-    icon: "👨‍🏫",
-    address: "0x8ba1f109551bD432803012645Hac136c82C",
-    network: "Ethereum",
-    balance: "2.85 ETH",
-    nfts: 12,
-    transactions: 156,
-    description: "An instructor's wallet with teaching rewards and premium NFTs",
-  },
-  {
-    name: "Collector Wallet",
-    icon: "💎",
-    address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-    network: "Polygon",
-    balance: "890.25 MATIC",
-    nfts: 28,
-    transactions: 203,
-    description: "A collector's wallet with rare educational NFTs and tokens",
-  },
-  {
-    name: "Developer Wallet",
-    icon: "💻",
-    address: "0xA0b86a33E6417c8C2A3F8C323D1C1C1C1C1C1C1C",
-    network: "Ethereum",
-    balance: "5.42 ETH",
-    nfts: 8,
-    transactions: 89,
-    description: "A developer's wallet with coding bootcamp certificates",
-  },
-  {
-    name: "Enterprise Wallet",
-    icon: "🏢",
-    address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    network: "Polygon",
-    balance: "1,250.00 MATIC",
-    nfts: 45,
-    transactions: 312,
-    description: "An enterprise wallet for bulk course purchases and team training",
-  },
-  {
-    name: "Creator Wallet",
-    icon: "🎨",
-    address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-    network: "Ethereum",
-    balance: "3.67 ETH",
-    nfts: 19,
-    transactions: 134,
-    description: "A content creator's wallet with design course royalties",
-  },
-]
 
 interface WalletProvider {
   name: string
   icon: string
   isInstalled: boolean
   connect: () => Promise<WalletInfo>
-  description?: string
+  description: string
+  installUrl?: string
 }
 
 declare global {
@@ -117,7 +44,6 @@ export function WalletConnect() {
   const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
   const [availableWallets, setAvailableWallets] = useState<WalletProvider[]>([])
-  const [showDemoWallets, setShowDemoWallets] = useState(false)
 
   useEffect(() => {
     // Check for existing connection on mount
@@ -144,21 +70,24 @@ export function WalletConnect() {
         icon: "🦊",
         isInstalled: typeof window !== "undefined" && !!window.ethereum?.isMetaMask,
         connect: connectMetaMask,
-        description: "Connect your MetaMask wallet",
+        description: "Connect your MetaMask wallet for Ethereum and EVM chains",
+        installUrl: "https://metamask.io/download/",
       },
       {
-        name: "Browser Wallet",
-        icon: "🌐",
-        isInstalled: typeof window !== "undefined" && !!(window.ethereum && !window.ethereum.isMetaMask),
-        connect: connectBrowserWallet,
-        description: "Connect your browser's Ethereum wallet",
+        name: "Phantom",
+        icon: "👻",
+        isInstalled: typeof window !== "undefined" && !!window.solana?.isPhantom,
+        connect: connectPhantom,
+        description: "Connect your Phantom wallet for Solana network",
+        installUrl: "https://phantom.app/download",
       },
       {
-        name: "Demo Wallets",
-        icon: "🎯",
-        isInstalled: true,
-        connect: () => Promise.resolve({} as WalletInfo), // Placeholder
-        description: "Try demo wallets with sample data",
+        name: "HashPack",
+        icon: "🔷",
+        isInstalled: typeof window !== "undefined" && !!window.hashpack,
+        connect: connectHashPack,
+        description: "Connect your HashPack wallet for Hedera network",
+        installUrl: "https://www.hashpack.app/download",
       },
     ]
 
@@ -171,12 +100,34 @@ export function WalletConnect() {
     }
 
     try {
+      // Request account access
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       })
 
       if (accounts.length === 0) {
         throw new Error("No accounts found")
+      }
+
+      // Get network information
+      const chainId = await window.ethereum.request({ method: "eth_chainId" })
+      let networkName = "Ethereum"
+
+      switch (chainId) {
+        case "0x1":
+          networkName = "Ethereum Mainnet"
+          break
+        case "0x89":
+          networkName = "Polygon"
+          break
+        case "0xa":
+          networkName = "Optimism"
+          break
+        case "0xa4b1":
+          networkName = "Arbitrum"
+          break
+        default:
+          networkName = "Unknown Network"
       }
 
       // Try to get balance
@@ -194,7 +145,7 @@ export function WalletConnect() {
 
       return {
         address: accounts[0],
-        network: "Ethereum",
+        network: networkName,
         balance,
         provider: "MetaMask",
         nfts: Math.floor(Math.random() * 10) + 1,
@@ -202,63 +153,88 @@ export function WalletConnect() {
       }
     } catch (error: any) {
       console.error("MetaMask connection error:", error)
+      if (error.code === 4001) {
+        throw new Error("User rejected the connection request")
+      }
       throw new Error(error.message || "Failed to connect to MetaMask")
     }
   }
 
-  const connectBrowserWallet = async (): Promise<WalletInfo> => {
-    if (!window.ethereum) {
-      throw new Error("No Ethereum wallet found")
+  const connectPhantom = async (): Promise<WalletInfo> => {
+    if (!window.solana?.isPhantom) {
+      throw new Error("Phantom wallet not installed")
     }
 
     try {
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })
+      const response = await window.solana.connect()
+      const publicKey = response.publicKey.toString()
 
-      if (accounts.length === 0) {
-        throw new Error("No accounts found")
+      // Try to get balance
+      let balance = "0 SOL"
+      try {
+        // Note: In a real implementation, you'd need to use Solana's web3.js
+        // This is a simplified version for demo purposes
+        balance = "0.0 SOL"
+      } catch (balanceError) {
+        console.warn("Could not fetch balance:", balanceError)
       }
 
       return {
-        address: accounts[0],
-        network: "Ethereum",
-        balance: "0.0 ETH",
-        provider: "Browser Wallet",
+        address: publicKey,
+        network: "Solana",
+        balance,
+        provider: "Phantom",
         nfts: Math.floor(Math.random() * 5) + 1,
         transactions: Math.floor(Math.random() * 50) + 5,
       }
     } catch (error: any) {
-      console.error("Browser wallet connection error:", error)
-      throw new Error(error.message || "Failed to connect to wallet")
+      console.error("Phantom connection error:", error)
+      if (error.code === 4001) {
+        throw new Error("User rejected the connection request")
+      }
+      throw new Error(error.message || "Failed to connect to Phantom")
     }
   }
 
-  const connectDemoWallet = async (demoWallet: DemoWallet): Promise<WalletInfo> => {
-    // Simulate connection delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+  const connectHashPack = async (): Promise<WalletInfo> => {
+    if (!window.hashpack) {
+      throw new Error("HashPack wallet not installed")
+    }
 
-    return {
-      address: demoWallet.address,
-      network: demoWallet.network,
-      balance: demoWallet.balance,
-      provider: demoWallet.name,
-      nfts: demoWallet.nfts,
-      transactions: demoWallet.transactions,
+    try {
+      const response = await window.hashpack.connectToLocalWallet()
+
+      if (!response.success) {
+        throw new Error("Failed to connect to HashPack")
+      }
+
+      const accountId = response.data.accountIds[0]
+
+      return {
+        address: accountId,
+        network: "Hedera",
+        balance: "0 HBAR",
+        provider: "HashPack",
+        nfts: Math.floor(Math.random() * 3) + 1,
+        transactions: Math.floor(Math.random() * 25) + 5,
+      }
+    } catch (error: any) {
+      console.error("HashPack connection error:", error)
+      throw new Error(error.message || "Failed to connect to HashPack")
     }
   }
 
   const handleWalletConnect = async (wallet: WalletProvider) => {
-    if (wallet.name === "Demo Wallets") {
-      setShowDemoWallets(true)
-      return
-    }
-
     if (!wallet.isInstalled) {
       toast({
         title: "Wallet not installed",
         description: `Please install ${wallet.name} to continue`,
         variant: "destructive",
+        action: wallet.installUrl ? (
+          <Button variant="outline" size="sm" onClick={() => window.open(wallet.installUrl, "_blank")}>
+            Install
+          </Button>
+        ) : undefined,
       })
       return
     }
@@ -289,34 +265,6 @@ export function WalletConnect() {
     }
   }
 
-  const handleDemoWalletConnect = async (demoWallet: DemoWallet) => {
-    setIsConnecting(true)
-    setShowDemoWallets(false)
-
-    try {
-      const walletData = await connectDemoWallet(demoWallet)
-      setWalletInfo(walletData)
-      setIsConnected(true)
-
-      // Store in session storage
-      sessionStorage.setItem("connectedWallet", JSON.stringify(walletData))
-
-      toast({
-        title: "Demo wallet connected",
-        description: `Connected to ${demoWallet.name}`,
-      })
-    } catch (error: any) {
-      console.error("Demo connection error:", error)
-      toast({
-        title: "Connection failed",
-        description: error.message || "Failed to connect demo wallet",
-        variant: "destructive",
-      })
-    } finally {
-      setIsConnecting(false)
-    }
-  }
-
   const handleDisconnect = () => {
     setIsConnected(false)
     setWalletInfo(null)
@@ -330,6 +278,10 @@ export function WalletConnect() {
 
   const shortenAddress = (address: string) => {
     if (!address) return ""
+    if (address.includes(".")) {
+      // Hedera account ID format
+      return address
+    }
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
@@ -360,10 +312,21 @@ export function WalletConnect() {
 
   const openExplorer = () => {
     if (walletInfo?.address) {
-      const explorerUrl =
-        walletInfo.network === "Polygon"
-          ? `https://polygonscan.com/address/${walletInfo.address}`
-          : `https://etherscan.io/address/${walletInfo.address}`
+      let explorerUrl = ""
+
+      switch (walletInfo.network) {
+        case "Polygon":
+          explorerUrl = `https://polygonscan.com/address/${walletInfo.address}`
+          break
+        case "Solana":
+          explorerUrl = `https://explorer.solana.com/address/${walletInfo.address}`
+          break
+        case "Hedera":
+          explorerUrl = `https://hashscan.io/mainnet/account/${walletInfo.address}`
+          break
+        default:
+          explorerUrl = `https://etherscan.io/address/${walletInfo.address}`
+      }
 
       window.open(explorerUrl, "_blank")
     }
@@ -400,14 +363,18 @@ export function WalletConnect() {
                   <div className="text-sm font-semibold text-slate-900">{walletInfo.balance}</div>
                   <div className="text-xs text-slate-500">Balance</div>
                 </div>
-                <div className="bg-slate-50 p-2 rounded">
-                  <div className="text-sm font-semibold text-slate-900">{walletInfo.nfts}</div>
-                  <div className="text-xs text-slate-500">NFTs</div>
-                </div>
-                <div className="bg-slate-50 p-2 rounded">
-                  <div className="text-sm font-semibold text-slate-900">{walletInfo.transactions}</div>
-                  <div className="text-xs text-slate-500">Transactions</div>
-                </div>
+                {walletInfo.nfts && (
+                  <div className="bg-slate-50 p-2 rounded">
+                    <div className="text-sm font-semibold text-slate-900">{walletInfo.nfts}</div>
+                    <div className="text-xs text-slate-500">NFTs</div>
+                  </div>
+                )}
+                {walletInfo.transactions && (
+                  <div className="bg-slate-50 p-2 rounded">
+                    <div className="text-sm font-semibold text-slate-900">{walletInfo.transactions}</div>
+                    <div className="text-xs text-slate-500">Transactions</div>
+                  </div>
+                )}
               </div>
 
               <div className="text-xs text-slate-500">Provider: {walletInfo.provider}</div>
@@ -433,63 +400,6 @@ export function WalletConnect() {
     )
   }
 
-  if (showDemoWallets) {
-    return (
-      <DropdownMenu open={showDemoWallets} onOpenChange={setShowDemoWallets}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            className="bg-gradient-to-r from-navy-600 to-navy-700 hover:from-navy-700 hover:to-navy-800 text-white"
-            disabled={isConnecting}
-          >
-            <Wallet className="w-4 h-4 mr-2" />
-            {isConnecting ? "Connecting..." : "Choose Demo Wallet"}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-96">
-          <div className="p-3">
-            <h3 className="font-medium mb-2">Choose a Demo Wallet</h3>
-            <p className="text-xs text-slate-600 mb-3">Select from pre-configured wallets with sample data</p>
-          </div>
-          <DropdownMenuSeparator />
-          <div className="max-h-80 overflow-y-auto">
-            {DEMO_WALLETS.map((wallet) => (
-              <DropdownMenuItem
-                key={wallet.address}
-                onClick={() => handleDemoWalletConnect(wallet)}
-                disabled={isConnecting}
-                className="flex flex-col items-start p-3 cursor-pointer space-y-2"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center">
-                    <span className="text-lg mr-2">{wallet.icon}</span>
-                    <div>
-                      <span className="font-medium">{wallet.name}</span>
-                      <div className="text-xs text-slate-500">{shortenAddress(wallet.address)}</div>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    {wallet.network}
-                  </Badge>
-                </div>
-                <div className="text-xs text-slate-600 w-full">{wallet.description}</div>
-                <div className="flex items-center space-x-4 text-xs text-slate-500 w-full">
-                  <div className="flex items-center space-x-1">
-                    <Coins className="w-3 h-3" />
-                    <span>{wallet.balance}</span>
-                  </div>
-                  <div>{wallet.nfts} NFTs</div>
-                  <div>{wallet.transactions} TXs</div>
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </div>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setShowDemoWallets(false)}>← Back to wallet options</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    )
-  }
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -501,34 +411,46 @@ export function WalletConnect() {
           {isConnecting ? "Connecting..." : "Connect Wallet"}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-72">
+      <DropdownMenuContent align="end" className="w-80">
         <div className="p-3">
           <h3 className="font-medium mb-2">Connect a Wallet</h3>
-          <p className="text-xs text-slate-600 mb-3">Connect your wallet to access blockchain features</p>
+          <p className="text-xs text-slate-600 mb-3">
+            Connect your wallet to access blockchain features and make crypto payments
+          </p>
         </div>
         <DropdownMenuSeparator />
-        {availableWallets.map((wallet) => (
-          <DropdownMenuItem
-            key={wallet.name}
-            onClick={() => handleWalletConnect(wallet)}
-            disabled={isConnecting}
-            className="flex items-center justify-between cursor-pointer p-3"
-          >
-            <div className="flex items-center">
-              <span className="text-lg mr-3">{wallet.icon}</span>
-              <div>
-                <span className="block font-medium">{wallet.name}</span>
-                <span className="text-xs text-slate-500">{wallet.description}</span>
+        <div className="space-y-1">
+          {availableWallets.map((wallet) => (
+            <DropdownMenuItem
+              key={wallet.name}
+              onClick={() => handleWalletConnect(wallet)}
+              disabled={isConnecting}
+              className="flex items-center justify-between cursor-pointer p-3 rounded-lg"
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">{wallet.icon}</span>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">{wallet.name}</span>
+                    {!wallet.isInstalled && (
+                      <Badge variant="outline" className="text-xs text-amber-600 border-amber-200">
+                        Not Installed
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">{wallet.description}</div>
+                </div>
               </div>
-            </div>
-            {!wallet.isInstalled && wallet.name !== "Demo Wallets" && (
-              <AlertCircle className="w-4 h-4 text-amber-500" />
-            )}
-          </DropdownMenuItem>
-        ))}
+              {!wallet.isInstalled && <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />}
+            </DropdownMenuItem>
+          ))}
+        </div>
         <DropdownMenuSeparator />
         <div className="p-3 text-xs text-slate-500">
-          💡 Demo wallets are perfect for testing Web3 features without real crypto!
+          💡 Need help? Visit our{" "}
+          <a href="/wallet-demo" className="text-navy-600 hover:underline">
+            wallet setup guide
+          </a>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

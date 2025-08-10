@@ -1,248 +1,159 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Coins, Award, ShoppingCart, Users, TrendingUp, Gift, Wallet } from "lucide-react"
-import { toast } from "@/hooks/use-toast"
-
-interface WalletFeature {
-  id: string
-  title: string
-  description: string
-  icon: React.ReactNode
-  action: string
-  cost?: string
-  reward?: string
-  available: boolean
-}
+import { Button } from "@/components/ui/button"
+import { Coins, Shield, Zap, Gift, TrendingUp, Award, Wallet, ExternalLink } from "lucide-react"
 
 export function WalletFeatures() {
-  const [connectedWallet, setConnectedWallet] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(false)
-
-  useEffect(() => {
-    const savedWallet = sessionStorage.getItem("connectedWallet")
-    if (savedWallet) {
-      try {
-        setConnectedWallet(JSON.parse(savedWallet))
-      } catch (error) {
-        console.error("Error parsing wallet:", error)
-      }
-    }
-  }, [])
-
-  const walletFeatures: WalletFeature[] = [
+  const features = [
     {
-      id: "purchase",
-      title: "Purchase with Crypto",
-      description: "Buy courses using your cryptocurrency balance",
-      icon: <ShoppingCart className="w-5 h-5" />,
-      action: "Buy Course",
-      cost: "0.05 ETH",
-      available: true,
+      icon: <Coins className="w-6 h-6" />,
+      title: "Multi-Chain Payments",
+      description: "Pay for courses using ETH, SOL, HBAR, or MATIC",
+      status: "Available",
+      color: "bg-green-100 text-green-800",
     },
     {
-      id: "earn",
-      title: "Earn Learning Tokens",
-      description: "Complete courses and earn EduTokens as rewards",
-      icon: <Coins className="w-5 h-5" />,
-      action: "Start Earning",
-      reward: "+50 EDU",
-      available: true,
+      icon: <Award className="w-6 h-6" />,
+      title: "NFT Certificates",
+      description: "Earn blockchain-verified completion certificates",
+      status: "Available",
+      color: "bg-green-100 text-green-800",
     },
     {
-      id: "nft",
-      title: "Course Certificates NFT",
-      description: "Get blockchain-verified certificates as NFTs",
-      icon: <Award className="w-5 h-5" />,
-      action: "Mint Certificate",
-      cost: "Free",
-      available: true,
+      icon: <Zap className="w-6 h-6" />,
+      title: "Learning Rewards",
+      description: "Earn EDU tokens for completing courses and milestones",
+      status: "Coming Soon",
+      color: "bg-blue-100 text-blue-800",
     },
     {
-      id: "stake",
-      title: "Stake for Premium",
-      description: "Stake tokens to unlock premium features",
-      icon: <TrendingUp className="w-5 h-5" />,
-      action: "Stake Tokens",
-      cost: "100 EDU",
-      available: connectedWallet?.nfts > 5,
+      icon: <Shield className="w-6 h-6" />,
+      title: "Secure Transactions",
+      description: "All payments secured by blockchain technology",
+      status: "Available",
+      color: "bg-green-100 text-green-800",
     },
     {
-      id: "referral",
-      title: "Referral Rewards",
-      description: "Earn crypto rewards for referring friends",
-      icon: <Users className="w-5 h-5" />,
-      action: "Get Referral Link",
-      reward: "0.01 ETH per referral",
-      available: true,
+      icon: <Gift className="w-6 h-6" />,
+      title: "Referral Bonuses",
+      description: "Earn crypto rewards for referring new students",
+      status: "Coming Soon",
+      color: "bg-blue-100 text-blue-800",
     },
     {
-      id: "airdrop",
-      title: "Weekly Airdrops",
-      description: "Receive free tokens for active learning",
-      icon: <Gift className="w-5 h-5" />,
-      action: "Claim Airdrop",
-      reward: "+25 EDU",
-      available: connectedWallet?.transactions > 10,
+      icon: <TrendingUp className="w-6 h-6" />,
+      title: "Token Staking",
+      description: "Stake EDU tokens for premium features and discounts",
+      status: "Coming Soon",
+      color: "bg-blue-100 text-blue-800",
     },
   ]
 
-  const handleFeatureAction = async (feature: WalletFeature) => {
-    if (!connectedWallet) {
-      toast({
-        title: "Wallet Required",
-        description: "Please connect your wallet to use this feature",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsLoading(true)
-
-    // Simulate blockchain transaction
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    switch (feature.id) {
-      case "purchase":
-        toast({
-          title: "Course Purchased!",
-          description: "Transaction confirmed. Course access granted.",
-        })
-        break
-      case "earn":
-        toast({
-          title: "Earning Started!",
-          description: "You'll earn EDU tokens as you complete lessons.",
-        })
-        break
-      case "nft":
-        toast({
-          title: "Certificate Minted!",
-          description: "Your course certificate NFT has been created.",
-        })
-        break
-      case "stake":
-        toast({
-          title: "Tokens Staked!",
-          description: "Premium features unlocked for 30 days.",
-        })
-        break
-      case "referral":
-        navigator.clipboard.writeText("https://edumarket.com/ref/abc123")
-        toast({
-          title: "Referral Link Copied!",
-          description: "Share this link to earn rewards.",
-        })
-        break
-      case "airdrop":
-        toast({
-          title: "Airdrop Claimed!",
-          description: "25 EDU tokens added to your wallet.",
-        })
-        break
-    }
-
-    setIsLoading(false)
-  }
-
-  if (!connectedWallet) {
-    return (
-      <Card className="border-slate-200">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Wallet className="w-5 h-5" />
-            <span>Web3 Features</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-slate-600 mb-4">Connect your wallet to unlock blockchain-powered learning features</p>
-          <div className="text-center">
-            <Button variant="outline" disabled>
-              Connect Wallet to Continue
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
+  const supportedWallets = [
+    {
+      name: "MetaMask",
+      icon: "🦊",
+      networks: ["Ethereum", "Polygon", "Arbitrum", "Optimism"],
+      url: "https://metamask.io",
+    },
+    {
+      name: "Phantom",
+      icon: "👻",
+      networks: ["Solana"],
+      url: "https://phantom.app",
+    },
+    {
+      name: "HashPack",
+      icon: "🔷",
+      networks: ["Hedera"],
+      url: "https://hashpack.app",
+    },
+  ]
 
   return (
-    <div className="space-y-6">
-      <Card className="border-slate-200">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Coins className="w-5 h-5 text-navy-600" />
-            <span>Your Web3 Profile</span>
-          </CardTitle>
+    <div className="space-y-8">
+      {/* Features Grid */}
+      <div>
+        <h2 className="text-3xl font-display font-bold text-navy-900 mb-6 text-center">Web3 Features</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature, index) => (
+            <Card key={index} className="border-slate-200 hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 bg-gradient-to-r from-navy-600 to-navy-700 rounded-xl flex items-center justify-center text-white">
+                    {feature.icon}
+                  </div>
+                  <Badge className={feature.color}>{feature.status}</Badge>
+                </div>
+                <CardTitle className="text-lg">{feature.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600 text-sm">{feature.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Supported Wallets */}
+      <div>
+        <h2 className="text-3xl font-display font-bold text-navy-900 mb-6 text-center">Supported Wallets</h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          {supportedWallets.map((wallet, index) => (
+            <Card key={index} className="border-slate-200 hover:shadow-lg transition-shadow">
+              <CardHeader className="text-center">
+                <div className="text-4xl mb-2">{wallet.icon}</div>
+                <CardTitle className="text-xl">{wallet.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-slate-600 font-medium">Supported Networks:</p>
+                  <div className="flex flex-wrap gap-1 justify-center">
+                    {wallet.networks.map((network) => (
+                      <Badge key={network} variant="outline" className="text-xs">
+                        {network}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full bg-transparent"
+                  onClick={() => window.open(wallet.url, "_blank")}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Learn More
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Getting Started */}
+      <Card className="border-slate-200 bg-gradient-to-r from-navy-50 to-slate-50">
+        <CardHeader className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-navy-600 to-navy-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Wallet className="w-8 h-8 text-white" />
+          </div>
+          <CardTitle className="text-2xl">Ready to Get Started?</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-navy-900">{connectedWallet.balance}</div>
-              <div className="text-sm text-slate-600">Balance</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-navy-900">{connectedWallet.nfts}</div>
-              <div className="text-sm text-slate-600">NFTs Owned</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-navy-900">{connectedWallet.transactions}</div>
-              <div className="text-sm text-slate-600">Transactions</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-navy-900">{Math.floor(Math.random() * 500) + 100}</div>
-              <div className="text-sm text-slate-600">EDU Tokens</div>
-            </div>
+        <CardContent className="text-center space-y-4">
+          <p className="text-slate-600 max-w-2xl mx-auto">
+            Connect your wallet to unlock the full potential of our Web3 educational platform. Enjoy secure payments,
+            earn rewards, and collect NFT certificates.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button className="bg-gradient-to-r from-navy-600 to-navy-700 hover:from-navy-700 hover:to-navy-800">
+              Connect Wallet
+            </Button>
+            <Button variant="outline">View Courses</Button>
           </div>
         </CardContent>
       </Card>
-
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {walletFeatures.map((feature) => (
-          <Card
-            key={feature.id}
-            className={`border-slate-200 ${feature.available ? "hover:shadow-lg transition-shadow" : "opacity-60"}`}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="p-2 bg-navy-100 rounded-lg text-navy-600">{feature.icon}</div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
-                </div>
-                {!feature.available && (
-                  <Badge variant="secondary" className="text-xs">
-                    Locked
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-slate-600 text-sm">{feature.description}</p>
-
-              <div className="flex items-center justify-between">
-                <div className="text-sm">
-                  {feature.cost && <span className="text-slate-500">Cost: {feature.cost}</span>}
-                  {feature.reward && <span className="text-green-600">Reward: {feature.reward}</span>}
-                </div>
-              </div>
-
-              <Button
-                onClick={() => handleFeatureAction(feature)}
-                disabled={!feature.available || isLoading}
-                className="w-full bg-gradient-to-r from-navy-600 to-navy-700 hover:from-navy-700 hover:to-navy-800"
-                size="sm"
-              >
-                {isLoading ? "Processing..." : feature.action}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
     </div>
   )
 }
